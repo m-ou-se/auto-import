@@ -1,0 +1,13 @@
+[package]
+name = "auto-import"
+description = "Please do not use this."
+version = "0.1.0"
+edition = "2021"
+license = "BSD-2-Clause"
+repository = "https://github.com/m-ou-se/auto-import"
+
+[lib]
+proc_macro = true
+
+[dependencies]
+json = "0.12.4"
