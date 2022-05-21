@@ -218,17 +218,27 @@ fn disambiguate(ident: String, mut suggestions: Vec<String>) -> (String, Vec<Str
     }
 
     println!("\x1b[1;33m   Ambiguity\x1b[m for {ident}");
+    // 1. prelude first
+    // 2. stable over unstable
+    // 3. more common (such as std::ops) over uncommon (like collection-specific things)
+    // list the excluded things as well
     const DEFAULTS: &[&str] = &[
-        // instead of:
-        // std::collections::btree_map::Range
-        // std::collections::btree_set::Range
+        // (more common)
+        // - std::collections::btree_map::Range
+        // - std::collections::btree_set::Range
         "std::ops::Range",
-        // instead of:
-        // std::fmt::Result
-        // std::io::Result
-        // std::thread::Result
-        // (with no_implicit_prelude)
+        // (prelude)
+        // - std::fmt::Result
+        // - std::io::Result
+        // - std::thread::Result
         "std::result::Result",
+        // (prelude)
+        // - std::fmt::Error
+        // - std::io::Error
+        "std::error::Error",
+        // (unstable)
+        // - std::io::read_to_string
+        "std::fs::read_to_string",
     ];
 
     if let Some(index) = suggestions
@@ -241,7 +251,11 @@ fn disambiguate(ident: String, mut suggestions: Vec<String>) -> (String, Vec<Str
 
     use rand::prelude::*;
 
-    println!("\x1b[1;33m  Don't know\x1b[m which is best");
+    for suggestion in &suggestions {
+        println!("\x1b[1;31m            \x1b[m {suggestion}");
+    }
+
+    println!("\x1b[1;31m  Don't know\x1b[m which is best");
     println!("\x1b[1;32m     Picking\x1b[m at random");
     let index = (0..suggestions.len()).choose(&mut thread_rng()).unwrap();
     let result = suggestions.swap_remove(index);
