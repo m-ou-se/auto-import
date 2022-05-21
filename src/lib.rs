@@ -120,7 +120,6 @@ pub fn magic(input: TokenStream) -> TokenStream {
                             .filter(|&s| !excluded.contains(s))
                             .map(Into::into),
                     );
-                    change = true;
                 }
             }
         }
@@ -144,6 +143,10 @@ pub fn magic(input: TokenStream) -> TokenStream {
                     excluded.insert(bad);
                 }
             }
+            change = true;
+        } else if more_imports.len() == 1 {
+            imports.extend(more_imports.drain());
+            change = true;
         }
 
         if !change || attempts == 10 {
