@@ -89,43 +89,26 @@ pub fn magic(input: TokenStream) -> TokenStream {
             .filter(|l| l.starts_with('{'))
         {
             if let Ok(json) = json::parse(line) {
-                // Ensure the file name matches.
-                if json["spans"].members().any(|span| {
-                    // assert_eq will contain "similarly named macro `assert` defined here"
-                    // with "is_primary": false, so therefore only check path for the
-                    span["is_primary"].as_bool().unwrap_or(false)
-                        && span["file_name"]
-                            .as_str()
-                            .map_or(false, |error_file| error_file != file)
-                }) {
-                    continue;
-                }
-                if json["children"].members().any(|c| {
+                if json["children"].members().chain([&json]).any(|c| {
                     c["spans"].members().any(|span| {
-                        span["file_name"]
-                            .as_str()
-                            .map_or(false, |error_file| error_file != file)
+                        // assert_eq will contain "similarly named macro `assert` defined here"
+                        // with "is_primary": false, so therefore only check path for the
+                        span["is_primary"].as_bool().unwrap_or(false)
+                            && span["file_name"]
+                                .as_str()
+                                .map_or(false, |error_file| error_file != file)
                     })
                 }) {
                     continue;
                 }
-                let suggestions: Vec<&str> = error(&json)
-                    .into_iter()
-                    .filter(|&s| !imports.contains(s))
-                    .collect();
-                if !suggestions.is_empty() {
-                    more_imports.extend(
-                        suggestions
-                            .into_iter()
-                            .filter(|&s| !excluded.contains(s))
-                            .map(Into::into),
-                    );
-                }
+                more_imports.extend(
+                    error(&json)
+                        .into_iter()
+                        .filter(|&s| !imports.contains(s))
+                        .filter(|&s| !excluded.contains(s))
+                        .map(Into::into),
+                );
             }
-        }
-
-        for import in &imports {
-            more_imports.remove(import);
         }
 
         if more_imports.len() > 1 {
@@ -143,22 +126,19 @@ pub fn magic(input: TokenStream) -> TokenStream {
                     excluded.insert(bad);
                 }
             }
-            change = true;
         } else if more_imports.len() == 1 {
             imports.extend(more_imports.drain());
-            change = true;
-        }
-
-        if !change || attempts == 10 {
-            return TokenStream::from_str(
-                &imports
-                    .iter()
-                    .flat_map(|s| ["use ", s, ";"])
-                    .collect::<String>(),
-            )
-            .unwrap();
+        } else {
+            break;
         }
     }
+    TokenStream::from_str(
+        &imports
+            .iter()
+            .flat_map(|s| ["use ", s, ";"])
+            .collect::<String>(),
+    )
+    .unwrap()
 }
 
 fn error<'a>(json: &'a JsonValue) -> Vec<&'a str> {
