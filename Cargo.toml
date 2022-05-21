@@ -1,7 +1,7 @@
 [package]
 name = "auto-import"
 description = "Please do not use this."
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "BSD-2-Clause"
 repository = "https://github.com/m-ou-se/auto-import"
@@ -11,3 +11,5 @@ proc_macro = true
 
 [dependencies]
 json = "0.12.4"
+rand = "0.8.5"
+lazy_static = "1.4.0"
