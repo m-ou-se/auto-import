@@ -59,10 +59,7 @@ pub fn magic(input: TokenStream) -> TokenStream {
     let mut more_imports = HashSet::<String>::new();
     let mut excluded = HashSet::<String>::new();
 
-    let mut attempts = 0;
-    loop {
-        attempts += 1;
-        let mut change = false;
+    for _ in 0..10 {
         let mut args = std::env::args_os();
         let out = process::Command::new(args.next().unwrap())
             .args(args.filter(|arg| {
