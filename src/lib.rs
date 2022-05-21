@@ -137,7 +137,7 @@ pub fn magic(input: TokenStream) -> TokenStream {
             }
             for (ident, suggestions) in idents {
                 let (best, exclude) = disambiguate(ident, suggestions);
-                println!("\x1b[1;32m   Injecting\x1b[m for {best}");
+                println!("\x1b[1;32m   Injecting\x1b[m {best}");
                 imports.insert(best);
                 for bad in exclude {
                     excluded.insert(bad);
@@ -217,13 +217,18 @@ fn disambiguate(ident: String, mut suggestions: Vec<String>) -> (String, Vec<Str
         }
     }
 
-    println!("\x1b[1;32m   Ambiguity\x1b[m for {ident}");
-    println!("\x1b[1;32m     Between\x1b[m {} items", suggestions.len());
-    for import in &suggestions {
-        println!("\x1b[1;32m            \x1b[m {import}");
-    }
+    println!("\x1b[1;33m   Ambiguity\x1b[m for {ident}");
     const DEFAULTS: &[&str] = &[
-        "std::ops::Range", // also includes BTreeMap/BTreeSet ranges
+        // instead of:
+        // std::collections::btree_map::Range
+        // std::collections::btree_set::Range
+        "std::ops::Range",
+        // instead of:
+        // std::fmt::Result
+        // std::io::Result
+        // std::thread::Result
+        // (with no_implicit_prelude)
+        "std::result::Result",
     ];
 
     if let Some(index) = suggestions
@@ -231,17 +236,15 @@ fn disambiguate(ident: String, mut suggestions: Vec<String>) -> (String, Vec<Str
         .position(|s| DEFAULTS.contains(&s.as_str()))
     {
         let result = suggestions.swap_remove(index);
-        println!("\x1b[1;32m     Picking\x1b[m {result}");
         return (result, suggestions);
     }
 
     use rand::prelude::*;
 
-    println!("\x1b[1;32m  Don't know\x1b[m which is best");
+    println!("\x1b[1;33m  Don't know\x1b[m which is best");
     println!("\x1b[1;32m     Picking\x1b[m at random");
     let index = (0..suggestions.len()).choose(&mut thread_rng()).unwrap();
     let result = suggestions.swap_remove(index);
-    println!("\x1b[1;32mEnded up with\x1b[m {result}");
     return (result, suggestions);
 }
 
@@ -251,11 +254,7 @@ fn std_and_core(ident: &str, a: &str, b: &str) -> bool {
     const core: &str = "core::";
     let r = a.starts_with(std) && b.starts_with(core) && a[std.len()..] == b[core.len()..];
     if r {
-        println!("\x1b[1;32m   Ambiguity\x1b[m for {ident}");
-        println!("\x1b[1;32m     Between\x1b[m 2 items");
-        println!("\x1b[1;32m            \x1b[m {a}");
-        println!("\x1b[1;32m            \x1b[m {b}");
-        println!("\x1b[1;32m     Picking\x1b[m {a}");
+        println!("\x1b[1;33m   Ambiguity\x1b[m for {ident}");
     }
     r
 }
